@@ -1,0 +1,9 @@
+__pycache__/
+*.py[cod]
+*.pyc
+*.pyo
+*.pyd
+*.so
+.DS_Store
+arcanum_memory.db
+
