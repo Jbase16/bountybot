@@ -1,16 +1,14 @@
 # executor.py
 
-import json
 import sys
+import json
+import asyncio
 
-from bountybot.analyzer.chainsynthesizer import synthesize_attack_paths
-from bountybot.exploits.payload_builder import (
-    generate_for_vulnerability_chain,
-    simulate_attack_attempt,
-)
-from bountybot.reporting.bounty_writer import write_bounty_report
-from bountybot.scanner.intelligence import determine_endpoint_role
-from bountybot.tools.runner import run_all_tools
+from src.bountybot.tools.runner import run_all_tools
+from src.bountybot.analyzer.chainsynther import synthesize_attack_paths
+from src.bountybot.exploits.payload_builder import generate_for_vulnerability_chain, evaluate_attack_simulation
+from src.bountybot.reporting.bounty_writer import write_bounty_report
+from src.bountybot.scanner.intelligence import determine_endpoint_role
 
 
 def autonomous_assessment_pipeline(target_url):
