@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 from pathlib import Path
 
@@ -19,10 +20,14 @@ from bountybot.tools.runner import run_all_tools
 def main(url: str) -> None:
     """Run the multi-tool scan suite synchronously."""
 
+    asyncio.run(_async_main(url))
+
+
+async def _async_main(url: str) -> None:
     init_db()
     click.echo("[🔍] Launching Multiscan Pentest Suite...")
 
-    all_results = run_all_tools(url)
+    all_results = await run_all_tools(url)
 
     nuclei_results = all_results.get("nuclei", [])
     amass_results = all_results.get("amass", [])

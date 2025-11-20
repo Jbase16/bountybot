@@ -5,15 +5,19 @@ import json
 import asyncio
 
 from src.bountybot.tools.runner import run_all_tools
-from src.bountybot.analyzer.chainsynther import synthesize_attack_paths
-from src.bountybot.exploits.payload_builder import generate_for_vulnerability_chain, evaluate_attack_simulation
+from src.bountybot.analyzer.chainsynthesizer import synthesize_attack_paths
+from src.bountybot.exploits.payload_builder import (
+    generate_for_vulnerability_chain,
+    evaluate_attack_simulation,
+    simulate_attack_attempt,
+)
 from src.bountybot.reporting.bounty_writer import write_bounty_report
 from src.bountybot.scanner.intelligence import determine_endpoint_role
 
 
-def autonomous_assessment_pipeline(target_url):
+async def autonomous_assessment_pipeline(target_url):
     # Phase 1: Recon Multi-tool
-    results = run_all_tools(target_url)
+    results = await run_all_tools(target_url)
     nuclei_findings = results.get('nuclei', [])
     
     # Phase 2: Role Classification
@@ -64,4 +68,4 @@ if __name__ == '__main__':
         exit(1)
 
     target = sys.argv[1]
-    autonomous_assessment_pipeline(target)
+    asyncio.run(autonomous_assessment_pipeline(target))

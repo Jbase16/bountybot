@@ -1,101 +1,78 @@
-# src/bountybot/tools/runner.py
+"""Mock tool runner used until the real integrations are wired up."""
 
-import json
-import shutil
-import subprocess
-from typing import Dict
+from __future__ import annotations
 
+import asyncio
+from typing import Dict, List
 
-class ToolExecutionError(RuntimeError):
-    """Raised when an external security tool fails to run."""
-
-
-TOOLS = {
-    'nuclei': {
-        'cmd': ['nuclei', '-u', '{target}', '-silent', '-jsonl', '-no-meta'],
-        'parser': lambda out: [
-            json.loads(line)
-            for line in out.splitlines()
-            if line.strip()
-        ],
-        'timeout': 300,
+MOCK_NUCLEI_RESULTS: List[dict] = [
+    {
+        "template-id": "cves/CVE-2021-1234",
+        "info": {
+            "name": "Example Vulnerable Component",
+            "severity": "high",
+        },
+        "matched-at": "http://httpbin.org/forms/post",
+        "matcher-name": "FormHandler",
     },
-    'amass': {
-        'cmd': ['amass', 'enum', '-d', '{domain}', '-silent'],
-        'parser': lambda out: [
-            {'subdomain': line.strip()}
-            for line in out.splitlines()
-            if line.strip()
-        ],
-        'timeout': 180,
+    {
+        "template-id": "misconfig/admin-panel",
+        "info": {
+            "name": "Admin Panel Exposure",
+            "severity": "medium",
+        },
+        "matched-at": "http://httpbin.org/admin/login",
+        "matcher-name": "",
     },
-    'ffuf': {
-        'cmd': [
-            'ffuf',
-            '-u', '{target}/FUZZ',
-            '-w', '/usr/share/wordlists/dirbuster.txt',
-            '-mc', '200',
-            '-s',
-        ],
-        'parser': lambda out: [
-            {'path': line.strip()}
-            for line in out.splitlines()
-            if line.strip()
-        ],
-        'timeout': 180,
-    },
-}
+]
+
+MOCK_AMASS_RESULTS: List[dict] = [
+    {"subdomain": "api.httpbin.org"},
+    {"subdomain": "dev.httpbin.org"},
+]
+
+MOCK_FFUF_RESULTS: List[dict] = [
+    {"path": "/basic-auth/user/passwd"},
+    {"path": "/bearer"},
+    {"path": "/status/418"},
+]
 
 
-def run_tool(tool_name: str, target: str, domain: str | None = None) -> Dict[str, list]:
-    """Run selected security tools with specified arguments."""
+async def run_tool(tool_name: str, target: str, domain: str | None = None) -> Dict[str, list]:
+    """Simulate a tool invocation with a short delay and canned output."""
 
-    tool_config = TOOLS[tool_name]
-    cmd_template = tool_config['cmd']
-    parsed_target = target.rstrip('/')
-    computed_domain = domain or parsed_target.split('//')[-1].split('/')[0]
+    await asyncio.sleep(0.1)  # mimic IO latency so async scheduling is exercised
 
-    cmd = [
-        arg.format(target=parsed_target, domain=computed_domain)
-        for arg in cmd_template
-    ]
-
-    binary = cmd[0]
-    if shutil.which(binary) is None:
-        return {tool_name: []}
-
-    try:
-        completed = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=tool_config.get('timeout', 180),
-            check=False,
-        )
-    except FileNotFoundError as exc:
-        raise ToolExecutionError(f"Missing tool binary: {binary}") from exc
-
-    if completed.returncode not in (0, 1):
-        raise ToolExecutionError(
-            f"{tool_name} exited with code {completed.returncode}: {completed.stderr.strip()}"
-        )
-
-    parser = tool_config['parser']
-    result = parser(completed.stdout)
-
-    return {tool_name: result}
+    mock_payloads = {
+        "nuclei": MOCK_NUCLEI_RESULTS,
+        "amass": MOCK_AMASS_RESULTS,
+        "ffuf": MOCK_FFUF_RESULTS,
+    }
+    return {tool_name: mock_payloads.get(tool_name, [])}
 
 
-def run_all_tools(target: str) -> Dict[str, list]:
-    """Execute each configured tool sequentially and merge their results."""
+def _extract_domain(target: str) -> str:
+    remainder = target.split("//", 1)[-1]
+    return remainder.split("/", 1)[0]
+
+
+async def run_all_tools(target: str) -> Dict[str, list]:
+    """
+    Launch all mock tools concurrently and merge their JSON-friendly payloads.
+    """
+
+    domain = _extract_domain(target)
+    tasks = (
+        run_tool("nuclei", target),
+        run_tool("amass", target, domain=domain),
+        run_tool("ffuf", target),
+    )
 
     merged: Dict[str, list] = {}
-
-    for tool_name in TOOLS.keys():
-        try:
-            merged.update(run_tool(tool_name, target))
-        except ToolExecutionError:
-            # Skip failing tool but continue with the rest
-            continue
+    for result in await asyncio.gather(*tasks):
+        merged.update(result)
 
     return merged
+
+
+__all__ = ["run_tool", "run_all_tools"]
