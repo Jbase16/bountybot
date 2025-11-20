@@ -1,11 +1,11 @@
-"""Mock tool runner used until the real integrations are wired up."""
+"""Mocked tool runner to avoid long-running external scans."""
 
 from __future__ import annotations
 
 import asyncio
-from typing import Dict, List
+import json
 
-MOCK_NUCLEI_RESULTS: List[dict] = [
+MOCK_NUCLEI_RESULTS = [
     {
         "template-id": "cves/CVE-2021-1234",
         "info": {
@@ -26,49 +26,44 @@ MOCK_NUCLEI_RESULTS: List[dict] = [
     },
 ]
 
-MOCK_AMASS_RESULTS: List[dict] = [
+MOCK_AMASS_RESULTS = [
     {"subdomain": "api.httpbin.org"},
     {"subdomain": "dev.httpbin.org"},
 ]
 
-MOCK_FFUF_RESULTS: List[dict] = [
-    {"path": "/basic-auth/user/passwd"},
-    {"path": "/bearer"},
-    {"path": "/status/418"},
+MOCK_FFUF_RESULTS = [
+    {"ffuf": "/basic-auth/user/passwd"},
+    {"ffuf": "/bearer"},
+    {"ffuf": "/status/418"},
 ]
 
 
-async def run_tool(tool_name: str, target: str, domain: str | None = None) -> Dict[str, list]:
-    """Simulate a tool invocation with a short delay and canned output."""
+async def run_tool(tool_name, target, domain=None):
+    """Return canned responses after a small delay to mimic IO."""
 
-    await asyncio.sleep(0.1)  # mimic IO latency so async scheduling is exercised
+    await asyncio.sleep(0.1)
 
-    mock_payloads = {
+    mocks = {
         "nuclei": MOCK_NUCLEI_RESULTS,
         "amass": MOCK_AMASS_RESULTS,
         "ffuf": MOCK_FFUF_RESULTS,
     }
-    return {tool_name: mock_payloads.get(tool_name, [])}
+
+    return {tool_name: mocks.get(tool_name, [])}
 
 
-def _extract_domain(target: str) -> str:
-    remainder = target.split("//", 1)[-1]
-    return remainder.split("/", 1)[0]
+async def run_all_tools(target):
+    """Launch mocked tool executions concurrently and merge their outputs."""
 
+    domain = target.split("//")[1] if "//" in target else target
 
-async def run_all_tools(target: str) -> Dict[str, list]:
-    """
-    Launch all mock tools concurrently and merge their JSON-friendly payloads.
-    """
-
-    domain = _extract_domain(target)
-    tasks = (
+    tasks = [
         run_tool("nuclei", target),
         run_tool("amass", target, domain=domain),
         run_tool("ffuf", target),
-    )
+    ]
 
-    merged: Dict[str, list] = {}
+    merged = {}
     for result in await asyncio.gather(*tasks):
         merged.update(result)
 

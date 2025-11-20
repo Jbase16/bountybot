@@ -8,7 +8,6 @@ from src.bountybot.tools.runner import run_all_tools
 from src.bountybot.analyzer.chainsynthesizer import synthesize_attack_paths
 from src.bountybot.exploits.payload_builder import (
     generate_for_vulnerability_chain,
-    evaluate_attack_simulation,
     simulate_attack_attempt,
 )
 from src.bountybot.reporting.bounty_writer import write_bounty_report
