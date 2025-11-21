@@ -4,9 +4,10 @@ import sqlite3
 import json
 from datetime import datetime
 
-DB_PATH = "arcanum_memory.db"
+DB_PATH = "arcanum_memory.db"  # Local SQLite file used for recording simulated successes.
 
 def init_db():
+    """Ensure the attack_success_log table exists."""
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS attack_success_log
@@ -20,6 +21,7 @@ def init_db():
 
 
 def log_attack_result(chain_description, success, tags):
+    """Record a simulated attack result along with lightweight tags."""
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     now = datetime.now().isoformat()
@@ -30,6 +32,7 @@ def log_attack_result(chain_description, success, tags):
 
 
 def retrieve_successful_chains(threshold=70):
+    """Fetch previously successful chains for display; threshold reserved for future scoring."""
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute("SELECT chain_description, tags FROM attack_success_log WHERE result=?", ("success",))

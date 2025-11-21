@@ -1,20 +1,23 @@
-# src/bountybot/analyzer/chainsynther.py
+"""Rule-based attack chain synthesis based on nuclei findings."""
 
 def synthesize_attack_paths(scan_results):
     """
     Analyze multiple vulnerabilities and propose feasible multistep attack vectors.
     Returns list of possible paths composed of two or more related findings.
     """
+    # Accumulator for generated attack paths.
     paths = []
 
+    # Buckets for simple rule matching.
     auth_endpoints = []
     uploads = []
     sqli_points = []
     exposed_admins = []
     debug_pages = []
 
-    role_index = {}  # Map endpoints by their inferred roles
+    role_index = {}  # Map endpoints by their inferred roles (reserved for future logic)
 
+    # Index findings by inferred role to feed the rule engine below.
     for idx, item in enumerate(scan_results):
         role = item.get('__arcanum_role', 'Unknown')
         endpoint = item.get('matched-at', '')

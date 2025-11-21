@@ -21,6 +21,7 @@ Provide a fix suggestion.
 """
 
 def write_bounty_report(title, summary, severity='high'):
+    """Compose a bounty report skeleton; in production this would call an LLM."""
     prompt = DEFAULT_PROMPT.format(summary=summary)
     # Here, we'd ideally plug in a model call like using Ollama or OpenAI API
     # But for prototype purposes, return a static structure + the prompt

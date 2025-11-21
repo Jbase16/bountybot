@@ -20,13 +20,16 @@ from bountybot.tools.runner import run_all_tools
 def main(url: str) -> None:
     """Run the multi-tool scan suite synchronously."""
 
+    # Click entry point delegates to the async routine.
     asyncio.run(_async_main(url))
 
 
 async def _async_main(url: str) -> None:
+    # Ensure the SQLite backing store exists before logging anything.
     init_db()
     click.echo("[🔍] Launching Multiscan Pentest Suite...")
 
+    # Fan out to all tools and collect their results.
     all_results = await run_all_tools(url)
 
     nuclei_results = all_results.get("nuclei", [])
@@ -53,6 +56,7 @@ def process_findings(target: str, findings: list[dict]) -> None:
     role_counts: dict[str, int] = {}
 
     for item in findings:
+        # Basic nuclei metadata extraction.
         template_id = item.get("template-id", "unknown")
         matcher_name = item.get("matcher-name") or ""
         matched_at = item.get("matched-at", "")
@@ -61,6 +65,7 @@ def process_findings(target: str, findings: list[dict]) -> None:
         severity = (info.get("severity") or "unknown").capitalize()
         name = info.get("name", "[Unnamed Template]")
 
+        # Enrich with role and LLM-style insights for analyst context.
         role_category = determine_endpoint_role(item)
         item["__arcanum_role"] = role_category
 
@@ -99,6 +104,7 @@ def render_attack_chains(findings: list[dict]) -> None:
     click.echo("\n🔗 Attack Chain Recommendations")
     click.echo("=" * 40)
 
+    # Synthesize attack paths based on roles and tags, then write bounty drafts.
     attack_chains = synthesize_attack_paths(findings)
     bounty_reports = generate_bounty_files(attack_chains)
 

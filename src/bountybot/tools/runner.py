@@ -6,6 +6,7 @@ import asyncio
 import json
 from .xsstrike_runner import run_xsstrike_scan
 
+# Canned nuclei findings used to exercise the pipeline without external tools.
 MOCK_NUCLEI_RESULTS = [
     {
         "template-id": "cves/CVE-2021-1234",
@@ -27,11 +28,13 @@ MOCK_NUCLEI_RESULTS = [
     },
 ]
 
+# Mock subdomain enumeration output for amass.
 MOCK_AMASS_RESULTS = [
     {"subdomain": "api.httpbin.org"},
     {"subdomain": "dev.httpbin.org"},
 ]
 
+# Mock ffuf directory brute-force results.
 MOCK_FFUF_RESULTS = [
     {"ffuf": "/basic-auth/user/passwd"},
     {"ffuf": "/bearer"},
@@ -42,6 +45,7 @@ MOCK_FFUF_RESULTS = [
 async def run_tool(tool_name, target, domain=None):
     """Return canned responses after a small delay to mimic IO."""
 
+    # Simulate network/tool latency so async scheduling still matters.
     await asyncio.sleep(0.1)
 
     mocks = {
@@ -58,6 +62,7 @@ async def run_all_tools(target):
 
     domain = target.split("//")[1] if "//" in target else target
 
+    # Kick off each tool asynchronously; xsstrike returns its own dict payload.
     tasks = [
         run_tool("nuclei", target),
         run_tool("amass", target, domain=domain),

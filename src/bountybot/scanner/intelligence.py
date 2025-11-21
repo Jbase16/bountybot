@@ -72,6 +72,7 @@ INSIGHT_PATTERNS: list[tuple[set[str], str]] = [
 
 
 def _ensure_iterable(value: object) -> Iterable[str]:
+    """Normalize arbitrary inputs into an iterable of strings."""
     if isinstance(value, str):
         return (value,)
     if isinstance(value, Iterable):
@@ -80,6 +81,7 @@ def _ensure_iterable(value: object) -> Iterable[str]:
 
 
 def _collect_text(finding: dict) -> tuple[str, set[str]]:
+    """Collapse relevant fields and tags into a lowercase blob plus a tag set."""
     info = finding.get("info") or {}
     fragments: list[str] = []
 
@@ -109,6 +111,7 @@ def _text_contains(text: str, keywords: set[str], tags: set[str]) -> bool:
 
 
 def _role_from_path(path: str) -> str | None:
+    """Fast-path role inference using just the matched URL path."""
     if not path:
         return None
 

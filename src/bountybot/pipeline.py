@@ -1,4 +1,8 @@
-# pipeline.py
+"""Legacy pipeline wrapper for running a full assessment and saving a JSON report.
+
+This mirrors the executor flow but keeps the output in a single report file,
+useful for synchronous or CLI-driven runs.
+"""
 
 import json
 from pathlib import Path
@@ -13,10 +17,12 @@ from src.bountybot.reporting.bounty_writer import write_bounty_report
 from src.bountybot.scanner.intelligence import determine_endpoint_role
 
 async def run_complete_assessment(target_url):
+    # Run the end-to-end workflow for one target and emit a JSON report.
     print("[*] Running Comprehensive Scan...")
-    findings = await run_nuclei_scan(target_url)
+    findings = await run_nuclei_scan(target_url)  # Currently uses mocked runner output.
 
     print("[*] Analyzing Roles...")
+    # Attach inferred roles to each finding so downstream synthesis has context.
     enriched_findings = []
     for f in findings:
         role = determine_endpoint_role(f)
@@ -27,6 +33,7 @@ async def run_complete_assessment(target_url):
     chains = synthesize_attack_paths(enriched_findings)
 
     print("[*] Generating Payload Options...")
+    # Build a flat queue of payloads associated with their originating chains.
     payloads = []
     for chain in chains:
         pl_list = generate_for_vulnerability_chain(chain, enriched_findings)
@@ -37,6 +44,7 @@ async def run_complete_assessment(target_url):
     simulation_results = simulate_attack_attempt(payloads, target_url)
 
     print("[*] Saving to Report...")
+    # Persist the full assessment details for later inspection.
     report_output = {
         "target": target_url,
         "findings": findings,
@@ -55,5 +63,6 @@ async def run_complete_assessment(target_url):
 async def run_nuclei_scan(target_url):
     """Fetch nuclei findings via the tool runner."""
 
+    # Tool runner returns a dict keyed by tool name; we only need nuclei here.
     tool_results = await run_all_tools(target_url)
     return tool_results.get("nuclei", [])
