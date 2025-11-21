@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+from .xsstrike_runner import run_xsstrike_scan
 
 MOCK_NUCLEI_RESULTS = [
     {
@@ -61,13 +62,15 @@ async def run_all_tools(target):
         run_tool("nuclei", target),
         run_tool("amass", target, domain=domain),
         run_tool("ffuf", target),
+        run_xsstrike_scan(target),
     ]
 
     merged = {}
     for result in await asyncio.gather(*tasks):
-        merged.update(result)
+        if isinstance(result, dict):
+            merged.update(result)
 
     return merged
 
 
-__all__ = ["run_tool", "run_all_tools"]
+__all__ = ["run_tool", "run_all_tools", "run_xsstrike_scan"]

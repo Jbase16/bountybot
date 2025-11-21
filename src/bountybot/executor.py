@@ -29,6 +29,8 @@ async def autonomous_assessment_pipeline(target_url):
 
     # Phase 3: Pathway Synthesis
     attack_paths = synthesize_attack_paths(classified_findings)
+    for path in attack_paths:
+        path["target_url"] = target_url
 
     # Phase 4: Simulate Payloads
     payload_queue = []
