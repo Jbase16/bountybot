@@ -11,6 +11,7 @@ from src.bountybot.exploits.payload_builder import (
     simulate_attack_attempt,
 )
 from src.bountybot.reporting.bounty_writer import write_bounty_report
+from src.bountybot.reporting.breach_summary_builder import summarize_attack_path
 from src.bountybot.scanner.intelligence import determine_endpoint_role
 
 
@@ -59,6 +60,18 @@ async def autonomous_assessment_pipeline(target_url):
         }, f, indent=2)
 
     print("[✅] Autonomous Assessment Complete: Saved as assessment_output.json")
+
+    # Save markdown-based summaries
+    summaries_written = []
+
+    for path in attack_paths:
+        summary_md = summarize_attack_path(path)
+        filename = f"{path['name'].replace(' ', '_').lower()}_summary.md"
+        with open(filename, 'w') as f:
+            f.write(summary_md)
+        summaries_written.append(filename)
+        
+    print(f"[✅] Generated Markdown Summaries: {', '.join(summaries_written)}")
 
 
 if __name__ == '__main__':
